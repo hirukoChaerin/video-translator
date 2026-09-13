@@ -6,10 +6,17 @@
  *   React gestiona pending/errores de forma declarativa.
  * - `useFormStatus` (en SubmitButton): el botón conoce el estado `pending`
  *   del formulario padre sin prop drilling.
+ *
+ * Validación de tamaño en el cliente: el servidor es quien manda (multer y
+ * nginx rechazan igual), pero validar aquí evita que el usuario espere una
+ * subida de gigabytes que iba a fallar de todos modos.
  */
 import { useActionState, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { uploadVideo } from '../api/client.js';
+
+const MAX_UPLOAD_GB = 10;
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_GB * 1024 * 1024 * 1024;
 
 function SubmitButton({ disabled }) {
   const { pending } = useFormStatus();
@@ -27,6 +34,10 @@ export function UploadForm({ onJobCreated }) {
   const [error, submitAction] = useActionState(async (_prev, formData) => {
     const file = formData.get('video');
     if (!file || file.size === 0) return 'Selecciona un video primero.';
+    if (file.size > MAX_UPLOAD_BYTES) {
+      const sizeGb = (file.size / 1024 ** 3).toFixed(1);
+      return `El video pesa ${sizeGb} GB y el límite es ${MAX_UPLOAD_GB} GB.`;
+    }
 
     try {
       const { jobId } = await uploadVideo(file);
@@ -54,7 +65,7 @@ export function UploadForm({ onJobCreated }) {
         ) : (
           <span className="dropzone-hint">
             Elige un video o arrástralo aquí
-            <small>MP4, MOV, MKV o WebM · hasta 1 GB</small>
+            <small>MP4, MOV, MKV o WebM · hasta {MAX_UPLOAD_GB} GB</small>
           </span>
         )}
       </label>

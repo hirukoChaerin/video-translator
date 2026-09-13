@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { UploadForm } from './components/UploadForm.jsx';
 import { JobCard } from './components/JobCard.jsx';
-
+//default app
 export default function App() {
   const [jobs, setJobs] = useState([]);
 

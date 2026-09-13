@@ -13,6 +13,15 @@ services:
       - redis-data:/data
     restart: unless-stopped
 
+  redis-commander:
+    container_name: test_redis_commander
+    image: rediscommander/redis-commander
+    restart: always
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - 5000:8081
+
   api-gateway:
     build: ./api-gateway
     env_file: .env

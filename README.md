@@ -136,6 +136,7 @@ Arrancar con GPU (usa el override, que además compila la imagen con cuBLAS/cuDN
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
 ```
 
 Para volver a CPU basta el compose normal: `docker compose up`. En Windows funciona vía WSL2 (driver NVIDIA en Windows + toolkit dentro de WSL).

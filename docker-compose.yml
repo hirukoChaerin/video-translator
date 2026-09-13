@@ -42,14 +42,8 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
-    # --- GPU (NVIDIA): descomenta si el host tiene nvidia-container-toolkit ---
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+    # GPU NVIDIA: usa el override dedicado ->
+    #   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
 
   frontend:
     build: ./frontend

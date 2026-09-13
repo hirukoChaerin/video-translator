@@ -83,12 +83,25 @@ def extract_audio(video: Path, out_wav: Path) -> Path:
     return out_wav
 
 
-def burn_subtitles(video: Path, srt: Path, out_video: Path) -> Path:
+def burn_subtitles(video: Path, srt: Path, out_video: Path, encoder: str = "libx264") -> Path:
     """Incrusta los subtítulos en el video (hardsub).
 
+    - encoder "libx264": codificación por CPU (compatible en cualquier host).
+    - encoder "h264_nvenc": codificación por GPU NVIDIA — descarga casi todo
+      el trabajo de render a la tarjeta (requiere NVENC disponible en el
+      contenedor: capability "video" del nvidia-container-toolkit).
     - El audio se copia sin recodificar (-c:a copy): más rápido y sin pérdida.
-    - preset veryfast + crf 23: buen equilibrio calidad/CPU para un MVP.
+
+    Patrón Strategy en miniatura: la tabla de argumentos por codificador
+    permite añadir hevc_nvenc, vaapi (Intel/AMD), etc. sin tocar el flujo.
     """
+    encoder_args = {
+        "libx264": ["-c:v", "libx264", "-preset", "veryfast", "-crf", "23"],
+        "h264_nvenc": ["-c:v", "h264_nvenc", "-preset", "p4", "-cq", "23"],
+    }
+    if encoder not in encoder_args:
+        raise ValueError(f"Codificador no soportado: {encoder}")
+
     out_video.parent.mkdir(parents=True, exist_ok=True)
     # El filtro subtitles necesita escapar caracteres especiales de la ruta
     srt_arg = str(srt).replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
@@ -96,7 +109,7 @@ def burn_subtitles(video: Path, srt: Path, out_video: Path) -> Path:
         "ffmpeg", "-y",
         "-i", str(video),
         "-vf", f"subtitles='{srt_arg}'",
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+        *encoder_args[encoder],
         "-c:a", "copy",
         str(out_video),
     ])

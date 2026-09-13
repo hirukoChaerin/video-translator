@@ -115,3 +115,29 @@ docker compose run --rm worker python -m app.tools.preload ko zh  # idiomas extr
 ```
 
 Los modelos quedan cacheados en el volumen `whisper-models`; el primer video del usuario ya no descarga nada y los errores de red aparecen aquí con un mensaje claro, no como un job fallido.
+
+## Usar la GPU (NVIDIA)
+
+Toda la selección CPU/GPU se controla por variables de entorno:
+
+| Variable | CPU | GPU |
+|---|---|---|
+| `WHISPER_DEVICE` | `cpu` | `cuda` (o `auto` para detectar) |
+| `WHISPER_COMPUTE_TYPE` | `int8` | `float16` |
+| `VIDEO_ENCODER` | `libx264` | `h264_nvenc` |
+
+Preparación del host (una vez): driver NVIDIA (`nvidia-smi` debe responder) y [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). Verifica con:
+
+```bash
+docker run --rm --gpus all nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi
+```
+
+Arrancar con GPU (usa el override, que además compila la imagen con cuBLAS/cuDNN):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+```
+
+Para volver a CPU basta el compose normal: `docker compose up`. En Windows funciona vía WSL2 (driver NVIDIA en Windows + toolkit dentro de WSL).
+
+Con GPU conviene subir el modelo: `WHISPER_MODEL=large-v3` con `float16` transcribe mejor y sigue siendo mucho más rápido que `small` en CPU.

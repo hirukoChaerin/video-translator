@@ -101,7 +101,9 @@ class TranslationPipeline:
             if settings.burn_subtitles:
                 out_video = job.output_dir / f"traducido_{Path(job.original_name).stem}.mp4"
                 await asyncio.to_thread(
-                    ffmpeg.burn_subtitles, job.input_path, srt_path, out_video
+                    ffmpeg.burn_subtitles,
+                    job.input_path, srt_path, out_video,
+                    settings.video_encoder,
                 )
                 artifacts["video"] = f"{job.job_id}/{out_video.name}"
 

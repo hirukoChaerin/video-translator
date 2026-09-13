@@ -1,0 +1,28 @@
+# Override para GPU NVIDIA. Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+#
+# Requisitos del HOST (una sola vez):
+#   1. Driver NVIDIA instalado (nvidia-smi debe funcionar)
+#   2. nvidia-container-toolkit instalado y Docker reiniciado
+#   Verificación:
+#   docker run --rm --gpus all nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi
+
+services:
+  worker:
+    build:
+      context: ./worker
+      args:
+        GPU: "true"   # instala cuBLAS/cuDNN en la imagen
+    environment:
+      WHISPER_DEVICE: cuda
+      WHISPER_COMPUTE_TYPE: float16
+      VIDEO_ENCODER: h264_nvenc   # subtítulos incrustados también por GPU
+      # "video" habilita NVENC/NVDEC dentro del contenedor
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility,video
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

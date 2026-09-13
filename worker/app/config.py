@@ -34,6 +34,7 @@ class Settings:
     burn_subtitles: bool = field(
         default_factory=lambda: _env("BURN_SUBTITLES", "true").lower() == "true"
     )
+    video_encoder: str = field(default_factory=lambda: _env("VIDEO_ENCODER", "libx264"))
     concurrency: int = field(default_factory=lambda: int(_env("WORKER_CONCURRENCY", "1")))
 
     api_base_url: str = field(default_factory=lambda: _env("API_BASE_URL", "http://localhost:4000"))

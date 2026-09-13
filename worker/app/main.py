@@ -83,9 +83,12 @@ async def main() -> None:
         {
             "connection": settings.redis_url,
             "concurrency": settings.concurrency,
-            # lockDuration alto: transcribir un video largo puede tardar minutos
-            # y no queremos que BullMQ considere el job "perdido" a mitad.
-            "lockDuration": 30 * 60 * 1000,
+            # El lock se RENUEVA solo cada lockDuration/2 mientras el job
+            # viva (el pipeline usa asyncio.to_thread, así que el event loop
+            # queda libre para renovarlo). 2 min da margen ante picos de CPU
+            # y, si el worker muere, el job se reintenta en ~2 min en vez de
+            # quedar bloqueado horas. NO lo subas al tamaño del video.
+            "lockDuration": 2 * 60 * 1000,
         },
     )
 

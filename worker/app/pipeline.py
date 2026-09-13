@@ -11,6 +11,7 @@ testear el pipeline con dobles (fakes) sin GPU ni modelos.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import shutil
 from dataclasses import dataclass
@@ -60,17 +61,28 @@ class TranslationPipeline:
         workdir.mkdir(exist_ok=True)
 
         try:
+            # Las etapas pesadas (ffmpeg, Whisper, traducción) son código
+            # SÍNCRONO y bloqueante. Se ejecutan en un hilo con
+            # asyncio.to_thread para que el event loop quede libre: BullMQ
+            # necesita el loop para renovar el lock del job cada
+            # lockDuration/2. Sin esto, un video largo congela el loop,
+            # el lock expira y el job se marca como "stalled" a mitad.
+
             # 1) Audio (10 %)
-            audio = ffmpeg.extract_audio(job.input_path, workdir / "audio.wav")
+            audio = await asyncio.to_thread(
+                ffmpeg.extract_audio, job.input_path, workdir / "audio.wav"
+            )
             await report(10)
 
             # 2) Transcripción, la etapa más costosa (10 % -> 60 %)
-            transcript = self._engine.transcribe(audio)
+            transcript = await asyncio.to_thread(self._engine.transcribe, audio)
             await report(60)
 
             # 3) Traducción al idioma destino (60 % -> 75 %)
             translator = pick_translator(transcript.language, settings.target_language)
-            translated = translator.translate(transcript, settings.target_language)
+            translated = await asyncio.to_thread(
+                translator.translate, transcript, settings.target_language
+            )
             await report(75)
 
             # 4) Subtítulos SRT + VTT (75 % -> 80 %)
@@ -88,7 +100,9 @@ class TranslationPipeline:
             # 5) Video con subtítulos incrustados, opcional (80 % -> 100 %)
             if settings.burn_subtitles:
                 out_video = job.output_dir / f"traducido_{Path(job.original_name).stem}.mp4"
-                ffmpeg.burn_subtitles(job.input_path, srt_path, out_video)
+                await asyncio.to_thread(
+                    ffmpeg.burn_subtitles, job.input_path, srt_path, out_video
+                )
                 artifacts["video"] = f"{job.job_id}/{out_video.name}"
 
             await report(100)

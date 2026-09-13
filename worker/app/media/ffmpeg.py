@@ -18,7 +18,20 @@ class FFmpegError(RuntimeError):
     """El proceso ffmpeg terminó con código distinto de cero."""
 
 
-def _run(args: list[str]) -> None:
+class NoAudioStreamError(RuntimeError):
+    """El archivo no contiene ninguna pista de audio: no hay nada que
+    transcribir. Error de dominio con mensaje apto para el usuario final."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "El video no tiene pista de audio, así que no hay nada que "
+            "transcribir. Suele pasar con descargas de Google/YouTube donde "
+            "el audio viene en un archivo separado. Verifica el archivo con: "
+            "ffprobe -show_entries stream=codec_type tu_video.mp4"
+        )
+
+
+def _run(args: list[str]) -> subprocess.CompletedProcess:
     result = subprocess.run(
         args,
         capture_output=True,
@@ -29,6 +42,23 @@ def _run(args: list[str]) -> None:
         # Solo las últimas líneas de stderr: suficiente para diagnosticar
         tail = "\n".join(result.stderr.strip().splitlines()[-8:])
         raise FFmpegError(f"ffmpeg falló ({result.returncode}):\n{tail}")
+    return result
+
+
+def has_audio_stream(video: Path) -> bool:
+    """Comprueba con ffprobe si el archivo tiene al menos una pista de audio.
+
+    Validar ANTES de procesar (fail fast) convierte un volcado críptico de
+    ffmpeg en un error de dominio claro para el usuario.
+    """
+    result = _run([
+        "ffprobe", "-v", "error",
+        "-select_streams", "a",
+        "-show_entries", "stream=index",
+        "-of", "csv=p=0",
+        str(video),
+    ])
+    return bool(result.stdout.strip())
 
 
 def extract_audio(video: Path, out_wav: Path) -> Path:
@@ -37,6 +67,9 @@ def extract_audio(video: Path, out_wav: Path) -> Path:
     Convertir aquí (y no dejar que Whisper decodifique el video) reduce el
     trabajo del modelo y el tamaño del archivo intermedio.
     """
+    if not has_audio_stream(video):
+        raise NoAudioStreamError()
+
     out_wav.parent.mkdir(parents=True, exist_ok=True)
     _run([
         "ffmpeg", "-y",

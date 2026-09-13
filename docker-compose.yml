@@ -1,0 +1,64 @@
+name: video-translator
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --maxmemory 256mb --maxmemory-policy noeviction
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  api-gateway:
+    build: ./api-gateway
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      STORAGE_ROOT: /data/storage
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./storage:/data/storage
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build: ./worker
+    env_file: .env
+    environment:
+      REDIS_HOST: redis
+      STORAGE_ROOT: /data/storage
+      API_BASE_URL: http://api-gateway:4000
+    volumes:
+      - ./storage:/data/storage
+      - whisper-models:/root/.cache   # cache de modelos Whisper entre reinicios
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    # --- GPU (NVIDIA): descomenta si el host tiene nvidia-container-toolkit ---
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  whisper-models:

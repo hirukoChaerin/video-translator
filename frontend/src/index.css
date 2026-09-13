@@ -1,0 +1,187 @@
+/*
+  Identidad visual anclada al tema: los subtítulos de video.
+  - La franja del héroe imita una banda de subtítulo (fondo oscuro, texto ámbar).
+  - La barra de progreso es una línea de tiempo de editor de video con cabezal.
+  Paleta: papel #F6F5F1 · tinta #1C2733 · ámbar subtítulo #E9B84C · azul señal #2E5AAC
+*/
+
+:root {
+  --paper: #f6f5f1;
+  --ink: #1c2733;
+  --ink-soft: #55606c;
+  --amber: #e9b84c;
+  --amber-deep: #b98a1d;
+  --signal: #2e5aac;
+  --line: #d8d5cc;
+  --danger: #b3372f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Archivo', system-ui, sans-serif;
+  font-variation-settings: 'wdth' 100;
+}
+
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 56px 20px 96px;
+}
+
+/* ---------- Héroe ---------- */
+.hero { margin-bottom: 40px; }
+
+.hero-band {
+  display: inline-block;
+  background: var(--ink);
+  color: var(--amber);
+  font-size: 15px;
+  padding: 6px 14px;
+  border-radius: 3px;
+  margin: 0 0 14px;
+}
+
+.hero h1 {
+  margin: 0 0 12px;
+  font-size: clamp(44px, 8vw, 64px);
+  font-weight: 750;
+  font-variation-settings: 'wdth' 72;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.hero-copy {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* ---------- Formulario ---------- */
+.upload-form { display: grid; gap: 14px; }
+
+.dropzone {
+  display: grid;
+  place-items: center;
+  min-height: 150px;
+  border: 2px dashed var(--line);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  text-align: center;
+  padding: 20px;
+}
+
+.dropzone:hover, .dropzone:focus-within { border-color: var(--signal); }
+.dropzone input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+.dropzone-hint { font-size: 17px; display: grid; gap: 6px; }
+.dropzone-hint small { color: var(--ink-soft); font-size: 13.5px; }
+.dropzone-file { font-weight: 600; word-break: break-all; }
+
+.submit {
+  border: 0;
+  border-radius: 6px;
+  padding: 14px 20px;
+  background: var(--ink);
+  color: var(--amber);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.submit:hover:not(:disabled) { background: #2a3846; }
+.submit:disabled { opacity: 0.45; cursor: not-allowed; }
+.submit:focus-visible, .dropzone:focus-within, a:focus-visible {
+  outline: 3px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.form-error { color: var(--danger); margin: 0; font-size: 15px; }
+
+/* ---------- Tarjetas de trabajo ---------- */
+.jobs { margin-top: 40px; display: grid; gap: 18px; }
+
+.job-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 18px 20px 20px;
+}
+
+.job-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.job-card h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.job-status {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--signal);
+  white-space: nowrap;
+}
+.job-completed .job-status { color: #2e7d43; }
+.job-failed .job-status { color: var(--danger); }
+
+/* Línea de tiempo de editor de video */
+.timeline {
+  position: relative;
+  height: 26px;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 24px, var(--line) 24px 25px),
+    #eceae3;
+  overflow: hidden;
+}
+
+.timeline-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(180deg, var(--amber), var(--amber-deep));
+  transition: width 0.5s ease;
+}
+
+.timeline-head {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 3px;
+  background: var(--ink);
+  transition: left 0.5s ease;
+}
+
+.job-stage {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.job-downloads { display: grid; gap: 8px; }
+.job-downloads a {
+  color: var(--signal);
+  font-weight: 600;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  width: fit-content;
+}
+.job-meta { margin: 4px 0 0; font-size: 13.5px; color: var(--ink-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-fill, .timeline-head { transition: none; }
+}

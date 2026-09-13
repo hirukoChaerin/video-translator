@@ -1,0 +1,22 @@
+{
+  "name": "video-translator-api",
+  "version": "1.0.0",
+  "description": "API Gateway: recibe videos, encola trabajos y publica el progreso",
+  "type": "module",
+  "engines": { "node": ">=24.0.0" },
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch --env-file=../.env src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "bullmq": "^5.56.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "multer": "^2.0.1",
+    "pino": "^9.7.0",
+    "pino-http": "^10.4.0"
+  }
+}

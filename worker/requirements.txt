@@ -1,0 +1,12 @@
+# Cola (cliente oficial de BullMQ para Python)
+bullmq>=2.15.0
+redis>=5.0
+# Transcripción (CTranslate2: mucho más rápido y ligero en RAM que openai-whisper)
+faster-whisper>=1.1.0
+# Traducción local sin depender de APIs externas
+argostranslate>=1.9.6
+# Callback HTTP al api-gateway
+httpx>=0.28
+
+# NOTA: si alguna librería aún no publica wheels para Python 3.14,
+# el Dockerfile permite bajar a 3.12/3.13 cambiando una sola línea (ARG PY_VERSION).

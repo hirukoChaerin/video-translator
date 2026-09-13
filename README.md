@@ -92,3 +92,26 @@ cd frontend && npm i && npm run dev
 - **Escalar**: el worker es el cuello de botella natural; `docker compose up --scale worker=3` levanta más consumidores de la misma cola sin cambiar nada más. En Kubernetes, cada servicio es un Deployment independiente.
 - **Almacenamiento**: hoy es disco compartido (`./storage`). Para migrar a S3/MinIO solo hay que tocar `storage.service`/rutas de descarga en el gateway y las rutas de salida del pipeline — el resto no cambia.
 - **Seguridad**: nombres de archivo regenerados (UUID), validación de MIME, protección contra path traversal en descargas, token con `timingSafeEqual` en el canal interno, `helmet` y usuario sin privilegios en los contenedores.
+
+## Solución de problemas
+
+### `CERTIFICATE_VERIFY_FAILED: self-signed certificate in certificate chain`
+
+Tu red (proxy/firewall corporativo o antivirus) intercepta el HTTPS y firma con su propia CA, que el contenedor no conoce. Solución:
+
+1. Consigue el certificado raíz de tu red en formato PEM (pídelo a TI, o expórtalo desde el navegador: candado → certificado → cadena → raíz → exportar como Base-64 `.crt`).
+2. Cópialo a `worker/certs/mi-red.crt` (la extensión debe ser `.crt`).
+3. Reconstruye: `docker compose build worker`.
+
+El Dockerfile lo instala con `update-ca-certificates` y exporta `SSL_CERT_FILE`/`REQUESTS_CA_BUNDLE`, de modo que requests, httpx, huggingface_hub y pip confían en él. **Nunca** desactives la verificación SSL como atajo.
+
+### Precargar modelos (recomendado)
+
+Descarga Whisper y los paquetes de traducción una sola vez, fuera del flujo de jobs:
+
+```bash
+docker compose run --rm worker python -m app.tools.preload        # en + ja -> es
+docker compose run --rm worker python -m app.tools.preload ko zh  # idiomas extra
+```
+
+Los modelos quedan cacheados en el volumen `whisper-models`; el primer video del usuario ya no descarga nada y los errores de red aparecen aquí con un mensaje claro, no como un job fallido.
